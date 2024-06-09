@@ -1,0 +1,12 @@
+[package]
+name = "headr"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+assert_cmd = "2.0.14"
+clap = { version = "4.5.4", features = ["derive"] }
+ctor = "0.2.8"
+predicates = "3.1.0"
+pretty_assertions = "1.4.0"
