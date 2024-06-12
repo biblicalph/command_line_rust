@@ -1,6 +1,13 @@
+use std::process;
+
 use headr::run;
 
 fn main() {
-    let headr = run();
-    headr.unwrap().print_results();
+    match run() {
+        Ok(headr) => headr.print(),
+        Err(e) => {
+            eprintln!("Application error: {e}");
+            process::exit(1);
+        }
+    };
 }

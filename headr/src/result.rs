@@ -25,7 +25,7 @@ impl HeadrResult {
       }
   }
 
-  pub fn print_results(&self) {
+  pub fn print(&self) {
       for item in &self.outputs {
           item.print();
       }
