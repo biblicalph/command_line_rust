@@ -1,10 +1,10 @@
 use anyhow::Result;
 use assert_cmd::Command;
+use ctor::{ctor, dtor};
 use predicates::prelude::*;
 use pretty_assertions::assert_eq;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use ctor::{ctor,dtor};
 
 const PROGRAM_BIN: &str = "headr";
 const EMPTY_FILE: &str = "tests/inputs/empty.txt";
@@ -93,13 +93,7 @@ fn reads_lines() -> Result<()> {
     )?;
     // reads all but last n lines
     read_lines_or_bytes(
-        &[
-            "-n",
-            "-5",
-            EMPTY_FILE,
-            ONE_LINE_FILE,
-            FOURTEEN_FILE
-        ],
+        &["-n", "-5", EMPTY_FILE, ONE_LINE_FILE, FOURTEEN_FILE],
         None,
         &vec![
             format_output_header(EMPTY_FILE),
@@ -190,13 +184,7 @@ fn reads_bytes() -> Result<()> {
     )?;
     // read all but last c bytes
     read_lines_or_bytes(
-        &[
-            "-c",
-            "-20",
-            EMPTY_FILE,
-            ONE_LINE_FILE,
-            MULTIBYTE_FILE,
-        ],
+        &["-c", "-20", EMPTY_FILE, ONE_LINE_FILE, MULTIBYTE_FILE],
         None,
         &vec![
             format_output_header(EMPTY_FILE),
@@ -214,30 +202,24 @@ fn reads_bytes() -> Result<()> {
     )?;
     // reading multibyte characters partially
     read_lines_or_bytes(
-        &[
-            "-c",
-            "25",
-            MULTIBYTE_FILE,
-        ],
+        &["-c", "25", MULTIBYTE_FILE],
         None,
         &vec![
             format_output_header(MULTIBYTE_FILE),
             "Great to have a smile �".to_string(),
-        ].join("\n"),
+        ]
+        .join("\n"),
         "",
     )?;
     // reading entire multibyte file
     read_lines_or_bytes(
-        &[
-            "-c",
-            "2K",
-            MULTIBYTE_FILE,
-        ],
+        &["-c", "2K", MULTIBYTE_FILE],
         None,
         &vec![
             format_output_header(MULTIBYTE_FILE),
             fs::read_to_string(MULTIBYTE_FILE)?.trim_end().to_string(),
-        ].join("\n"),
+        ]
+        .join("\n"),
         "",
     )?;
 
@@ -289,7 +271,9 @@ fn format_output_header(filename: &str) -> String {
 /// runs before all tests are executed
 #[ctor]
 fn global_setup() {
-    let mut perms = fs::metadata(PERM_ERROR_FILE).expect("perm error file must exist").permissions();
+    let mut perms = fs::metadata(PERM_ERROR_FILE)
+        .expect("perm error file must exist")
+        .permissions();
     perms.set_mode(0o000);
     fs::set_permissions(PERM_ERROR_FILE, perms).expect("failed to set permissions");
 }
@@ -297,7 +281,9 @@ fn global_setup() {
 /// runs after all tests are executed
 #[dtor]
 fn global_teardown() {
-    let mut perms = fs::metadata(PERM_ERROR_FILE).expect("perm error file must exist").permissions();
+    let mut perms = fs::metadata(PERM_ERROR_FILE)
+        .expect("perm error file must exist")
+        .permissions();
     perms.set_mode(0o644);
     fs::set_permissions(PERM_ERROR_FILE, perms).expect("failed to restore permissions");
 }
