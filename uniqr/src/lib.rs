@@ -15,7 +15,7 @@ pub fn run() -> anyhow::Result<()> {
     let res = UniqMatcher::from_reader(&mut handle, &args)?;
 
     match &args.output_file {
-        Some(filename) => write_output(filename, &res.to_string())?,
+        Some(filename) => fs::write(filename, &res.to_string())?,
         None => print!("{res}"),
     }
 
@@ -28,8 +28,4 @@ fn open(filename: &str) -> anyhow::Result<Box<dyn BufRead>> {
         "-" => Ok(Box::new(BufReader::new(io::stdin().lock()))),
         file => Ok(Box::new(BufReader::new(File::open(file)?))),
     }
-}
-
-fn write_output(filename: &str, output: &str) -> io::Result<()> {
-    fs::write(filename, output)
 }
