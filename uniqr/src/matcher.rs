@@ -19,7 +19,7 @@ impl<'a> UniqMatcher<'a> {
             }
             if let Some(last_item) = matches.last_mut() {
                 if last_item.is_line_match(&line, flags.ignore_case) {
-                    last_item.add_line(&line);
+                    last_item.increment_count();
                 } else {
                     matches.push(UniqMatchItem::with_line(&line));
                 }
@@ -42,11 +42,11 @@ impl<'a> Display for UniqMatcher<'a> {
                 // See: https://doc.rust-lang.org/reference/expressions/match-expr.html#match-guards
                 let msg = match self.flags {
                     _ if self.flags.count_occurrences => {
-                        format!("{:>5} {}", m.count(), m.lines.first().unwrap())
+                        format!("{:>5} {}", m.count, m.line)
                     }
                     // use only first line for case insensitive match without counts
-                    _ if self.flags.ignore_case => format!("{}", m.lines.first().unwrap()),
-                    _ => format!("{}", m.lines.join("")),
+                    _ if self.flags.ignore_case => format!("{}", m.line),
+                    _ => format!("{}", m.line),
                 };
 
                 match self.flags {
@@ -65,50 +65,43 @@ const NEWLINE_CHARS: &[char] = &['\r', '\n'];
 
 #[derive(Clone, Debug, PartialEq)]
 struct UniqMatchItem {
-    lines: Vec<String>,
+    line: String,
+    count: u64,
 }
 
 impl UniqMatchItem {
     #[cfg(test)]
     fn new() -> Self {
-        Self { lines: vec![] }
+        Self { line: "".to_string(), count: 0 }
     }
     fn with_line(line: &str) -> Self {
         Self {
-            lines: vec![line.to_string()],
+            line: line.to_string(),
+            count: 1,
         }
     }
 
-    fn add_line(&mut self, line: &str) {
-        self.lines.push(line.to_string());
+    fn increment_count(&mut self) {
+        self.count += 1;
     }
 
     fn is_line_match(&self, line: &str, ignore_case: bool) -> bool {
-        match self.lines.last() {
-            None => false,
-            Some(last_line) => {
-                let last_line = last_line.trim_end_matches(NEWLINE_CHARS);
-                let line = line.trim_end_matches(NEWLINE_CHARS);
+      let last_line = self.line.trim_end_matches(NEWLINE_CHARS);
+      let line = line.trim_end_matches(NEWLINE_CHARS);
 
-                if ignore_case {
-                    last_line.eq_ignore_ascii_case(line)
-                } else {
-                    last_line.eq(line)
-                }
-            }
-        }
-    }
-
-    fn count(&self) -> usize {
-        self.lines.len()
+      if ignore_case {
+          last_line.eq_ignore_ascii_case(line)
+      } else {
+          last_line.eq(line)
+      }
     }
 
     fn is_unique(&self) -> bool {
-        self.count() == 1
+        self.count == 1
     }
 
     fn is_duplicate(&self) -> bool {
-        self.count() > 1
+        self.count > 1
     }
 }
 
