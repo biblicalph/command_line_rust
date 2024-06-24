@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+  "findr",
+  "headr",
+  "uniqr",
+  "wcr"
+]
