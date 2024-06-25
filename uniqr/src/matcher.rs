@@ -72,7 +72,10 @@ struct UniqMatchItem {
 impl UniqMatchItem {
     #[cfg(test)]
     fn new() -> Self {
-        Self { line: "".to_string(), count: 0 }
+        Self {
+            line: "".to_string(),
+            count: 0,
+        }
     }
     fn with_line(line: &str) -> Self {
         Self {
@@ -86,14 +89,14 @@ impl UniqMatchItem {
     }
 
     fn is_line_match(&self, line: &str, ignore_case: bool) -> bool {
-      let last_line = self.line.trim_end_matches(NEWLINE_CHARS);
-      let line = line.trim_end_matches(NEWLINE_CHARS);
+        let last_line = self.line.trim_end_matches(NEWLINE_CHARS);
+        let line = line.trim_end_matches(NEWLINE_CHARS);
 
-      if ignore_case {
-          last_line.eq_ignore_ascii_case(line)
-      } else {
-          last_line.eq(line)
-      }
+        if ignore_case {
+            last_line.eq_ignore_ascii_case(line)
+        } else {
+            last_line.eq(line)
+        }
     }
 
     fn is_unique(&self) -> bool {

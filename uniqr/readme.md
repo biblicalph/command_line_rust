@@ -24,4 +24,3 @@ Several language features were used in the implementation including:
 - Closures
 - Match guards
 - write! macro, etc
-- 
