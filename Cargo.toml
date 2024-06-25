@@ -1,8 +1,10 @@
 [workspace]
 
+resolver = "2"
 members = [
   "findr",
   "headr",
-  "uniqr",
+  "uniqr", 
+  "error_utils",
   "wcr"
 ]
