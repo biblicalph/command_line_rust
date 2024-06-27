@@ -5,13 +5,16 @@ const PRG: &'static str = "findr";
 
 #[test]
 fn dies_bad_type() -> anyhow::Result<()> {
-    run_bad_arg_test(&["-t", "x"], "invalid value 'x' for '--type [<TYPE>...]'")
+    run_bad_arg_test(
+        &["--type", "x"],
+        "invalid value 'x' for '--type [<TYPE>...]'",
+    )
 }
 
 #[test]
 fn dies_bad_name_regex() -> anyhow::Result<()> {
     run_bad_arg_test(
-        &["-n", "*.csv"],
+        &["--name", "*.csv"],
         "error: invalid value '*.csv' for '--name [<NAME>...]'",
     )
 }
@@ -36,68 +39,71 @@ fn writes_errors_to_standard_error() -> anyhow::Result<()> {
 
 #[test]
 fn list_all_entries_in_directory() -> anyhow::Result<()> {
-    let mut expected = vec![
-        "tests/inputs",
-        "tests/inputs/g.csv",
-        "tests/inputs/a",
-        "tests/inputs/a/a.txt",
-        "tests/inputs/a/b",
-        "tests/inputs/a/b/b.csv",
-        "tests/inputs/a/b/c",
-        "tests/inputs/a/b/c/c.mp3",
-        "tests/inputs/f",
-        "tests/inputs/f/f.txt",
-        "tests/inputs/d",
-        "tests/inputs/d/b.csv",
-        "tests/inputs/d/d.txt",
-        "tests/inputs/d/d.tsv",
-        "tests/inputs/d/e",
-        "tests/inputs/d/e/e.mp3",
-    ]
-    .join("\n");
-    expected.push('\n');
-
-    run_stdout_test(&["tests/inputs"], &expected)
+    run_stdout_test(
+        &["tests/inputs"],
+        &mut vec![
+            "tests/inputs",
+            "tests/inputs/g.csv",
+            "tests/inputs/a",
+            "tests/inputs/a/a.txt",
+            "tests/inputs/a/b",
+            "tests/inputs/a/b/b.csv",
+            "tests/inputs/a/b/c",
+            "tests/inputs/a/b/c/c.mp3",
+            "tests/inputs/f",
+            "tests/inputs/f/f.txt",
+            "tests/inputs/d",
+            "tests/inputs/d/b.csv",
+            "tests/inputs/d/d.txt",
+            "tests/inputs/d/d.tsv",
+            "tests/inputs/d/e",
+            "tests/inputs/d/e/e.mp3",
+        ],
+    )
 }
 
 #[test]
 fn list_entries_in_multiple_directories() -> anyhow::Result<()> {
-    let mut expected = vec![
-        "tests/inputs/d",
-        "tests/inputs/d/b.csv",
-        "tests/inputs/d/d.txt",
-        "tests/inputs/d/d.tsv",
-        "tests/inputs/d/e",
-        "tests/inputs/d/e/e.mp3",
-        "tests/inputs/f",
-        "tests/inputs/f/f.txt",
-    ]
-    .join("\n");
-    expected.push('\n');
-
-    run_stdout_test(&["tests/inputs/d", "tests/inputs/f"], &expected)
+    run_stdout_test(
+        &["tests/inputs/d", "tests/inputs/f"],
+        &mut vec![
+            "tests/inputs/d",
+            "tests/inputs/d/b.csv",
+            "tests/inputs/d/d.txt",
+            "tests/inputs/d/d.tsv",
+            "tests/inputs/d/e",
+            "tests/inputs/d/e/e.mp3",
+            "tests/inputs/f",
+            "tests/inputs/f/f.txt",
+        ],
+    )
 }
 
 #[test]
 fn list_directories() -> anyhow::Result<()> {
-    let mut expected = vec![
-        "tests",
-        "tests/inputs",
-        "tests/inputs/a",
-        "tests/inputs/a/b",
-        "tests/inputs/a/b/c",
-        "tests/inputs/f",
-        "tests/inputs/d",
-        "tests/inputs/d/e",
-    ]
-    .join("\n");
-    expected.push('\n');
-    run_stdout_test(&["tests", "-t", "d"], &expected)
+    run_stdout_test(
+        &["tests", "--type", "d"],
+        &mut vec![
+            "tests",
+            "tests/inputs",
+            "tests/inputs/a",
+            "tests/inputs/a/b",
+            "tests/inputs/a/b/c",
+            "tests/inputs/f",
+            "tests/inputs/d",
+            "tests/inputs/d/e",
+        ],
+    )
 }
 
 #[test]
 fn list_regular_files() -> anyhow::Result<()> {
-    let mut expected = vec![
+    run_stdout_test(&["tests/inputs", "--type", "f"], &mut regular_files())
+}
+
+#[cfg(not(windows))]
+fn regular_files() -> Vec<&'static str> {
+    vec![
         "tests/inputs/g.csv",
         "tests/inputs/a/a.txt",
         "tests/inputs/a/b/b.csv",
@@ -107,75 +113,163 @@ fn list_regular_files() -> anyhow::Result<()> {
         "tests/inputs/d/d.tsv",
         "tests/inputs/d/e/e.mp3",
     ]
-    .join("\n");
-    expected.push('\n');
-    run_stdout_test(&["tests/inputs", "-t", "f"], &expected)
+}
+
+#[cfg(windows)]
+fn regular_files() -> Vec<&'static str> {
+    vec![
+        "tests/inputs/g.csv",
+        "tests/inputs/a/a.txt",
+        "tests/inputs/a/b/b.csv",
+        "tests/inputs/a/b/c/c.mp3",
+        "tests/inputs/f/f.txt",
+        "tests/inputs/d/d.txt",
+        "tests/inputs/d/d.tsv",
+        "tests/inputs/d/e/e.mp3",
+        // symbolic links are regular files on windows
+        "tests/inputs/d/b.csv",
+    ]
 }
 
 #[test]
+#[cfg(not(windows))]
+// symbolic links are regular files on windows
 fn list_symbolic_link() -> anyhow::Result<()> {
-    let expected = "tests/inputs/d/b.csv\n";
-    run_stdout_test(&["tests/inputs", "-t", "l"], &expected)
+    run_stdout_test(
+        &["tests/inputs", "--type", "l"],
+        &mut vec!["tests/inputs/d/b.csv"],
+    )
 }
 
 #[test]
+#[cfg(not(windows))]
+// symbolic links are regular files on windows
 fn find_by_multiple_types() -> anyhow::Result<()> {
-    let mut expected =
-        vec!["tests/inputs/d", "tests/inputs/d/b.csv", "tests/inputs/d/e"].join("\n");
-    expected.push('\n');
-    run_stdout_test(&["tests/inputs/d", "-t", "l", "-t", "d"], &expected)
+    run_stdout_test(
+        &["tests/inputs/d", "--type", "l", "--type", "d"],
+        &mut vec!["tests/inputs/d", "tests/inputs/d/b.csv", "tests/inputs/d/e"],
+    )
 }
 
 #[test]
 fn find_by_name() -> anyhow::Result<()> {
-    let mut expected = vec![
-        "tests/inputs/g.csv",
-        "tests/inputs/a/b/b.csv",
-        "tests/inputs/d/b.csv",
-    ]
-    .join("\n");
-    expected.push('\n');
-    run_stdout_test(&["tests/inputs", "-n", ".*[.]csv"], &expected)
+    run_stdout_test(
+        &["tests/inputs", "--name", ".*[.]csv"],
+        &mut vec![
+            "tests/inputs/g.csv",
+            "tests/inputs/a/b/b.csv",
+            "tests/inputs/d/b.csv",
+        ],
+    )
 }
 
 #[test]
 fn find_by_multiple_names() -> anyhow::Result<()> {
-    let mut expected = vec![
-        "tests/inputs/g.csv",
-        "tests/inputs/a/a.txt",
-        "tests/inputs/a/b/b.csv",
-        "tests/inputs/f/f.txt",
-        "tests/inputs/d/b.csv",
-        "tests/inputs/d/d.txt",
-    ]
-    .join("\n");
-    expected.push('\n');
     run_stdout_test(
-        &["tests/inputs", "-n", ".*[.]csv", "-n", ".*[.]txt"],
-        &expected,
+        &["tests/inputs", "--name", ".*[.]csv", "--name", ".*[.]txt"],
+        &mut vec![
+            "tests/inputs/g.csv",
+            "tests/inputs/a/a.txt",
+            "tests/inputs/a/b/b.csv",
+            "tests/inputs/f/f.txt",
+            "tests/inputs/d/b.csv",
+            "tests/inputs/d/d.txt",
+        ],
     )
 }
 
 #[test]
-fn find_by_name_and_type() -> anyhow::Result<()> {
+#[cfg(not(windows))]
+fn find_symbolic_links_by_name() -> anyhow::Result<()> {
     run_stdout_test(
-        &["tests/inputs", "-n", ".*[.]csv", "-t", "l"],
-        "tests/inputs/d/b.csv\n",
-    )?;
-    run_stdout_test(
-        &["tests/inputs", "-n", ".*[.]csv", "-t", "f"],
-        &vec!["tests/inputs/g.csv", "tests/inputs/a/b/b.csv\n"].join("\n"),
+        &["tests/inputs", "--name", ".*[.]csv", "--type", "l"],
+        &mut vec!["tests/inputs/d/b.csv"],
     )
 }
 
-fn run_stdout_test(args: &[&str], out: &str) -> anyhow::Result<()> {
+#[test]
+fn find_regular_files_by_name() -> anyhow::Result<()> {
+    run_stdout_test(
+        &["tests/inputs", "--name", ".*[.]csv", "--type", "f"],
+        &mut vec!["tests/inputs/g.csv", "tests/inputs/a/b/b.csv"],
+    )
+}
+
+#[test]
+fn restrict_to_maxdepth() -> anyhow::Result<()> {
+    run_stdout_test(
+        &["tests/inputs", "--maxdepth", "1"],
+        &mut vec![
+            "tests/inputs",
+            "tests/inputs/g.csv",
+            "tests/inputs/a",
+            "tests/inputs/f",
+            "tests/inputs/d",
+        ],
+    )?;
+    run_stdout_test(
+        &["tests/inputs/a", "--maxdepth", "2"],
+        &mut vec![
+            "tests/inputs/a",
+            "tests/inputs/a/a.txt",
+            "tests/inputs/a/b",
+            "tests/inputs/a/b/b.csv",
+            "tests/inputs/a/b/c",
+        ],
+    )
+}
+
+#[test]
+fn restrict_to_mindepth() -> anyhow::Result<()> {
+    run_stdout_test(
+        &["tests/inputs", "--mindepth", "4"],
+        &mut vec!["tests/inputs/a/b/c/c.mp3"],
+    )?;
+    run_stdout_test(
+        &["tests/inputs/a", "--mindepth", "2"],
+        &mut vec![
+            "tests/inputs/a/b/b.csv",
+            "tests/inputs/a/b/c",
+            "tests/inputs/a/b/c/c.mp3",
+        ],
+    )
+}
+
+#[test]
+fn restrict_to_within_depth_range() -> anyhow::Result<()> {
+    run_stdout_test(
+        &["tests/inputs", "--mindepth", "3", "--maxdepth", "4"],
+        &mut vec![
+            "tests/inputs/a/b/b.csv",
+            "tests/inputs/a/b/c",
+            "tests/inputs/a/b/c/c.mp3",
+            "tests/inputs/d/e/e.mp3",
+        ],
+    )?;
+    run_stdout_test(
+        &["tests/inputs", "--mindepth", "3", "--maxdepth", "3"],
+        &mut vec![
+            "tests/inputs/a/b/b.csv",
+            "tests/inputs/a/b/c",
+            "tests/inputs/d/e/e.mp3",
+        ],
+    )
+}
+
+fn run_stdout_test(args: &[&str], out: &mut [&str]) -> anyhow::Result<()> {
     let res = Command::cargo_bin(PRG)?.args(args).output()?;
-    let actual = String::from_utf8(res.stdout)?;
     assert!(
         res.status.success(),
         "command is successful: {}",
         String::from_utf8(res.stderr)?
     );
+    let actual = String::from_utf8(res.stdout)?;
+    let mut actual = actual
+        .split('\n')
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>();
+    actual.sort();
+    out.sort();
     assert_eq!(actual, out, "outputs match");
     Ok(())
 }
@@ -188,7 +282,7 @@ fn run_stderr_test(args: &[&str], errs: &[&str]) -> anyhow::Result<()> {
     let actual_errs = String::from_utf8(res.stderr)?;
     let actual_errs = actual_errs.split('\n').collect::<Vec<_>>();
 
-    assert!(actual_errs.len() > 0, "has at least 1standard error");
+    assert!(actual_errs.len() > 0, "has at least 1 standard error");
 
     for e in errs {
         assert!(actual_errs.contains(e), "stderr contains: {e}");

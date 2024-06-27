@@ -10,11 +10,15 @@ pub struct FindrArgs {
     #[arg(default_value("."))]
     pub paths: Vec<String>,
     /// Match file types ending with the specified name pattern
-    #[arg(short('n'),long("name"),value_name("NAME"),num_args(0..))]
+    #[arg(short(None), long("name"),value_name("NAME"),num_args(0..))]
     pub names: Vec<Regex>,
     /// The file type to match
-    #[arg(short('t'),long("type"),value_name("TYPE"),num_args(0..))]
+    #[arg(short(None), long("type"),value_name("TYPE"),num_args(0..))]
     pub file_types: Vec<FileType>,
+    #[arg(short(None), long("maxdepth"))]
+    pub max_depth: Option<usize>,
+    #[arg(short(None), long("mindepth"))]
+    pub min_depth: Option<usize>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]

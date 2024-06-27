@@ -20,6 +20,7 @@ fn find_matches<'a>(args: &'a FindrArgs) -> ProgramResult<'static> {
 }
 
 fn process_path(p: &str, args: &FindrArgs) {
+    // examples of using defining closures
     let type_filter = |entry: &DirEntry| -> bool {
         args.file_types.is_empty()
             || args
@@ -35,7 +36,7 @@ fn process_path(p: &str, args: &FindrArgs) {
                 .any(|name| name.is_match(&entry.path().to_string_lossy()))
     };
 
-    let out = WalkDir::new(p)
+    let out = new_walker(p, args)
         .into_iter()
         .filter_map(|res| match res {
             Err(e) => {
@@ -51,6 +52,17 @@ fn process_path(p: &str, args: &FindrArgs) {
         .join("\n");
 
     println!("{out}");
+}
+
+fn new_walker(p: &str, args: &FindrArgs) -> WalkDir {
+    let mut walker = WalkDir::new(p);
+    if let Some(depth) = args.max_depth {
+        walker = walker.max_depth(depth);
+    }
+    if let Some(depth) = args.min_depth {
+        walker = walker.min_depth(depth);
+    }
+    walker
 }
 
 fn translate_error(e: Box<dyn error::Error>, pathname: &str) -> ProgramError {
