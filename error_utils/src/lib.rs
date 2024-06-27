@@ -58,7 +58,7 @@ pub enum ProgramError<'a> {
 impl<'a> From<(io::Error, ProgramErrorParams<'a>)> for ProgramError<'a> {
     fn from((err, params): (io::Error, ProgramErrorParams<'a>)) -> Self {
         let (prg_name, pathname) = (params.prg_name.unwrap(), params.pathname.unwrap());
-        
+
         match err.kind() {
             ErrorKind::NotFound => Self::FileNotFound { prg_name, pathname },
             ErrorKind::PermissionDenied => Self::PermissionDenied { prg_name, pathname },
@@ -71,31 +71,20 @@ impl<'a> From<(io::Error, ProgramErrorParams<'a>)> for ProgramError<'a> {
     }
 }
 
-impl<'a> From<(WalkDirError, ProgramErrorParams<'a>)> for ProgramError<'a> {
-    fn from((err, params): (WalkDirError, ProgramErrorParams<'a>)) -> Self {
-        let (prg_name, pathname) = (params.prg_name.unwrap(), params.pathname.unwrap());
-       
-        if err.io_error().is_some() {
-            return (err.into_io_error().unwrap(), params).into();
-        } 
-        Self::Other {
-            prg_name,
-            pathname,
-            err: Box::new(err),
-        }
-    }
-}
-
 impl<'a> From<(Box<dyn error::Error>, ProgramErrorParams<'a>)> for ProgramError<'a> {
     fn from((err, params): (Box<dyn error::Error>, ProgramErrorParams<'a>)) -> Self {
-        if let Some(_) = err.downcast_ref::<io::Error>() {
-            (err, params).into()
-        } else {
-            Self::Other {
-                prg_name: params.prg_name.unwrap(),
-                pathname: params.pathname.unwrap(),
-                err,
+        if let Some(e) = err.downcast_ref::<WalkDirError>() {
+            if let Some(io_err) = e.io_error() {
+                return (io::Error::new(io_err.kind(), io_err.to_string()), params).into();
             }
+        }
+        if let Some(e) = err.downcast_ref::<io::Error>() {
+            return (io::Error::new(e.kind(), e.to_string()), params).into();
+        }
+        Self::Other {
+            prg_name: params.prg_name.unwrap(),
+            pathname: params.pathname.unwrap(),
+            err,
         }
     }
 }
@@ -142,7 +131,10 @@ mod tests {
             .build()?;
 
         let actual: ProgramError = (Box::new(err) as Box<dyn error::Error>, params).into();
-        assert_eq!(actual.to_string(), "findr: blargh: invalid digit found in string");
+        assert_eq!(
+            actual.to_string(),
+            "findr: blargh: invalid digit found in string"
+        );
         Ok(())
     }
 }

@@ -1,5 +1,6 @@
 use clap::{builder::PossibleValue, Parser, ValueEnum};
 use regex::Regex;
+use std::fs::FileType as LibFileType;
 
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
@@ -38,5 +39,15 @@ impl ValueEnum for FileType {
             FileType::Link => PossibleValue::new("l"),
         };
         Some(val)
+    }
+}
+
+impl FileType {
+    pub fn is_type(&self, file_type: &LibFileType) -> bool {
+        match self {
+            Self::Dir => file_type.is_dir(),
+            Self::File => file_type.is_file(),
+            Self::Link => file_type.is_symlink(),
+        }
     }
 }
